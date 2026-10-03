@@ -1,0 +1,2 @@
+run_id,date,config_note,receipt_id,category,width_mm,length_mm,speed_mm_s,result,skew_deg,notes
+1,,baseline: oring driven / bare idler / spring hole 2,R001,flat,80,210,60,ok,,

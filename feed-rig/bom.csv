@@ -1,0 +1,48 @@
+group,part,spec,qty,approx_usd_total,notes
+Printed,Driven roller,driven_roller.stl - D22 x 82 mm,2,,PLA/PETG upright; 5 perimeters
+Printed,Idler roller,idler_roller.stl - D28 x 82 mm,2,,upright; test the bearing-pocket fit first
+Printed,Idler arm,idler_arm.stl,4,,flat; 100% infill
+Printed,Hub washer,hub_washer.stl - OD12 ID8.4 x 6 mm,8,,4 driven + 4 idler
+Printed,Pulley shim,pulley_shim.stl - OD12 ID8.4 x 1 mm,2,,plate A side only
+Printed,Frame spacer,spacer.stl - OD12 ID5.5 x 95 mm,4,,
+Printed,Funnel,funnel.stl,1,,print on its end cap
+Printed,Width shim,width_shim.stl,2,,optional; for 57/58 mm receipts
+Printed,Camera mount,camera_mount.stl,1,,bar face down
+Laser-cut,Side plate,side_plate_laser.svg - 157 x 167 mm,2,,from 6 mm basswood/poplar plywood; set plate_t to the measured thickness
+Material,Plywood sheet,6 mm laser plywood 12x12 in,3,15,2 plates + 1 spare/test
+Material,Filament,PLA or PETG,~250 g,6,
+Mechanical,Ball bearing,608ZZ (8x22x7),8,6,usually sold in packs of 10
+Mechanical,Smooth rod,8 mm steel; cut 2x129 mm + 2x123 mm,600 mm,10,or buy precut lengths
+Mechanical,GT2 pulley 8 mm bore,20T for 6 mm belt,2,6,driven shafts
+Mechanical,GT2 pulley 5 mm bore,20T for 6 mm belt,1,3,motor
+Mechanical,GT2 closed belt loop,200 mm x 6 mm,1,4,check the report if you change the motor position
+Mechanical,O-ring,18 x 2 mm NBR 70A,8,8,an assortment box with 18x2 also works
+Mechanical,Extension spring,~20-40 mm long, light,4,5,a spring assortment; rubber bands for a first test
+Mechanical,M5 threaded rod,cut to 4 x 120 mm,1 m,4,frame spacers
+Fastener,M5 nut,,8,,
+Fastener,M5 washer,,8,,
+Fastener,M3 x 16 socket head,arm pivots,4,,
+Fastener,M3 nylock nut,arm pivots,4,,
+Fastener,M3 washer,arm pivots (2 per pivot),8,,
+Fastener,M3 x 10 socket head,motor 4 + funnel 6 + camera mount 4 + spring anchors 4,18,,
+Fastener,M3 nut,spring anchors,4,,
+Fastener,M3 x 6 grub screw,driven rollers,4,,pulleys come with their own
+Fastener,M3 x 4 grub screw,idler arms (a longer one sticks out),4,,
+Fastener,M2 x 6 screw,camera board to standoffs,4,,
+Fastener,(kit),M3 + M2 + M5 assortment,1,15,covers all fasteners above
+Drive,NEMA17 stepper,e.g. 17HS4401 (1.5 A; 40 mm body; 5 mm shaft at least 24 mm long),1,12,a 20 mm shaft is too short for the pulley
+Drive,TMC2209 driver module,standalone STEP/DIR,1,6,
+Drive,Electrolytic capacitor,100 uF 25 V+,1,1,across the driver's VM/GND - protects the driver
+Drive,Arduino Nano/Uno or ESP32,,1,8,runs feed_test.ino
+Drive,12 V 2 A power supply + DC jack,,1,10,
+Drive,Jumper wires + breadboard,,1,6,
+Camera,Raspberry Pi Camera Module 3 Wide,,1,35,
+Camera,Raspberry Pi 4 (2 GB+),,1,45,Pi 5 also works but needs a 22-pin-to-15-pin camera cable
+Camera,Camera ribbon cable 300 mm,15-pin (Pi 4),1,4,
+Camera,microSD 32 GB,,1,8,
+Camera,USB-C power supply for the Pi,5 V 3 A (Pi 4) / 5 V 5 A (Pi 5),1,10,
+Lighting,TBD,,,,not designed yet
+Tools,M3 tap,,1,5,for the grub-screw holes
+Tools,8 mm drill bit or reamer,,1,5,clean up the roller bores
+Tools,Calipers,,1,,
+Tools,CA glue,,1,4,if a bearing press fit is loose
