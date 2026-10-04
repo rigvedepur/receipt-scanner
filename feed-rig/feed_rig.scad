@@ -20,7 +20,7 @@
 // =====================================================================
 
 /* [Part to render] */
-part = "assembly"; // [assembly, side_plate, side_plate_2d, funnel, driven_roller, idler_roller, idler_arm, spacer, hub_washer, width_shim, camera_mount, pulley_shim]
+part = "assembly"; // [assembly, side_plate, side_plate_2d, side_plate_cnc_inner, side_plate_cnc_outline, fit_coupon_2d, fit_coupon_cnc_inner, fit_coupon_cnc_outline, funnel, driven_roller, idler_roller, idler_arm, spacer, hub_washer, width_shim, camera_mount, pulley_shim]
 show_plates   = true;  // turn off to see inside from the side
 show_paper    = true;
 show_hardware = true;  // shafts, bearings, motor, pulleys, belt (visual only)
@@ -70,7 +70,7 @@ shaft_d      = 8;     // driven shafts and idler rods (8 mm smooth rod)
 bearing_od   = 22;    // 608 bearing
 bearing_w    = 7;
 bearing_press = 0.1;  // interference for the 608s pressed into the plates
-motor_shaft_len = 24; // NEMA17 shaft length beyond the flange (17HS4401: 24 mm)
+motor_shaft_len = 20; // NEMA17 shaft length beyond the flange (17HS15-1704S: 20 mm, D-cut)
 m3_head_d    = 5.5;   // socket-head diameter, for clearance checks
 pivot_hole   = 3.5;   // arm pivot hole: printed holes shrink, and the arm must swing freely on M3
 arm_rod_hole = 8.2;   // arm hole for the 8 mm idler rod (drill or ream to a snug fit)
@@ -79,6 +79,8 @@ m3_tap       = 2.7;   // M3 self-tapping into plastic
 m5_clear     = 5.5;   // M5 threaded-rod frame spacers
 pulley_teeth = 20;    // GT2 20T on all three (1:1)
 pulley_len   = 16;
+pulley_hub_len = 7;   // set-screw hub; the rest is flange + teeth + flange
+pulley_hub_in  = true; // hubs face the plate: lets a 20 mm motor shaft carry the hub fully
 
 /* [Motor] */
 motor_x     = -48;  // NEMA17 center. Defaults give a ~200 mm closed GT2 loop
@@ -102,6 +104,9 @@ cam_standoff = 4;     // clears the parts on the back of the board
 cam_holder_t = 3;
 cam_bar_t    = 10;
 m2_tap       = 1.8;
+
+/* [CNC export (one bit, Luban "On the Path")] */
+cnc_bit = 3.175;   // end mill diameter; every path is offset by its radius
 
 /* [Side plates] */
 plate_mode      = "laser"; // [laser, print]
@@ -193,7 +198,8 @@ cam_modes = [[1536, 864, 120], [2304, 1296, 56], [4608, 2592, 14]];  // IMX708 s
 feed_v = 60;   // mm/s, for the report only
 
 hc = plate_mode == "laser" ? -laser_kerf : print_hole_comp;
-function hd(d) = d + hc;
+$hc = hc;                      // hole compensation; the CNC export sets it to 0
+function hd(d) = d + $hc;
 
 pulley_pd = pulley_teeth*2/PI;
 function belt_len(mx) =
@@ -268,7 +274,10 @@ function pass(c, need = 0.5) = c >= need ? "ok  " : "FAIL";
 fc_funnel_arm = min([for (h = funnel_holes) for (th = [th_min, 0, th_max]) arm_clear(h, m3_head_d/2, 0, th)]);
 fc_web       = min([for (i = [0:1]) for (k = [0:8]) let(th = th_min + (th_max - th_min)*k/8)
                     norm(rod_at(i, th) - [drv_x, nips[i]]) - bearing_od/2 - (shaft_d + 1)/2]);
-fc_pulley    = motor_shaft_len - plate_t - 2 - pulley_len;
+// The motor pulley's hub (set screw) must sit fully on the shaft; teeth may overhang a little.
+hub_end      = pulley_hub_in ? 2 + pulley_hub_len : 2 + pulley_len;   // from plate A's outer face
+fc_pulley    = motor_shaft_len - plate_t - hub_end;
+teeth_over   = max(0, 2 + pulley_len - (motor_shaft_len - plate_t) - (pulley_hub_in ? 1 : 0));
 fc_cap_hole  = min([for (h = funnel_holes) funnel_top - h[1] - m3_tap/2]);
 fc_cam_motor = (cam_mz0) - (motor_z + 21);
 fc_play      = plate_gap - roller_len - 2*washer_t;   // total axial play per roller
@@ -281,7 +290,8 @@ echo(str("\n======== FIT CHECK ========",
   "\n [", pass(fc_anchor_head, 0), "] nearest unused anchor screw head vs arm: ", fc_anchor_head, " mm",
   "\n [", pass(fc_web, 3), "] plywood web between driven-bearing hole and idler-rod slot: ", fc_web, " mm",
   "\n [", pass(fc_cap_hole, 1), "] funnel cap material above its screw holes: ", fc_cap_hole, " mm",
-  "\n [", pass(fc_pulley, 0), "] motor shaft left after plate + gap + pulley: ", fc_pulley, " mm (needs a ", motor_shaft_len, " mm shaft)",
+  "\n [", pass(fc_pulley, 0), "] motor pulley hub fully on the shaft: ", fc_pulley, " mm to spare (", motor_shaft_len, " mm shaft, hubs ", pulley_hub_in ? "toward" : "away from", " the plate)",
+  teeth_over > 0 ? str("\n [", teeth_over <= 4 ? "ok  " : "FAIL", "] motor pulley teeth overhang the shaft end by ", teeth_over, " mm (fine up to ~4 mm)") : "",
   "\n [", pass(fc_cam_motor, 2), "] camera mount above motor body: ", fc_cam_motor, " mm",
   "\n [", fc_play >= 0.2 && fc_play <= 1.5 ? "ok  " : "FAIL", "] hub washers: axial play per roller ", fc_play, " mm (want 0.2-1.5)",
   "\n [", pass(fc_idl_gap, 3), "] gap between the two idler rollers: ", fc_idl_gap, " mm",
@@ -336,9 +346,10 @@ module plate_outline() {
     }
 }
 
-module side_plate_2d() {
-    difference() {
-        plate_outline();
+module side_plate_2d() difference() { plate_outline(); plate_holes_2d(); }
+
+module plate_holes_2d() {
+    union() {
         for (z = nips) translate([drv_x, z]) circle(d = hd(bearing_od - bearing_press));  // 608 press fit
         for (i = [0 : 1]) {
             rod_slot(i);
@@ -352,6 +363,48 @@ module side_plate_2d() {
             hull() for (dx = [-cam_slot, cam_slot]) translate([cam_slot_x + dx, z]) circle(d = hd(m3_clear));
     }
 }
+
+// ---------------------------------------------------------------------
+//  CNC export: ONE bit, every path cut with Luban "On the Path" (bit centre
+//  on the line). Paths are pre-offset by the bit radius, so the cut lands on
+//  the true edge: holes are drawn smaller, the outline larger. An M3 hole
+//  becomes a 0.2 mm circle that the 3.175 mm bit sweeps out to 3.4 mm.
+//  Both files carry the same two corner marks, so they share one bounding
+//  box: place both at the same X/Y in Luban. Cut "inner" first, then
+//  "outline" with tabs.
+// ---------------------------------------------------------------------
+module cnc_marks() {   // tiny marks at the outline-path bounding-box corners (in waste)
+    b = cnc_bbox();
+    for (p = [[b[0], b[1]], [b[2], b[3]]]) translate(p) square(0.05, center = true);
+}
+function cnc_bbox() = let(pts = concat(
+        [for (s = spacers) [s[0], s[1], spacer_od/2 + 4]],
+        [for (sx = [-1, 1]) for (sz = [-1, 1]) [motor_x + sx*(21 + motor_slot), motor_z + sz*21, 4]],
+        [for (i = [0 : 1]) [tail(i)[0], tail(i)[1], plate_margin]],
+        [for (i = [0 : 1]) for (s = anchor_offsets) [idl_x + s, tail(i)[1], plate_margin]],
+        [for (h = funnel_holes) [h[0], h[1], plate_margin]],
+        [for (z = nips) [drv_x, z, bearing_od/2 + plate_margin]],
+        [for (z = cam_slot_z) for (dx = [-cam_slot, cam_slot]) [cam_slot_x + dx, z, plate_margin]],
+        [[0, z_top - 1, 1]]), r = cnc_bit/2 + 0.5)
+    [min([for (p = pts) p[0] - p[2]]) - r, z_bot - r,
+     max([for (p = pts) p[0] + p[2]]) + r, max([for (p = pts) p[1] + p[2]]) + r];
+// Small fit-test piece: one bearing hole, M5, two M3, one motor slot - same
+// hole code as the plates, so a good fit here means a good fit there.
+module coupon_outline() translate([-14, -20]) square([60, 40]);
+module coupon_holes_2d() {
+    circle(d = hd(bearing_od - bearing_press));                                  // 608 press fit
+    translate([24, 10])  circle(d = hd(m5_clear));                                // M5
+    translate([24, -10]) circle(d = hd(m3_clear));                                // M3
+    translate([36, -10]) circle(d = hd(m3_clear));                                // M3
+    translate([36, 10]) hull() for (dx = [-motor_slot, motor_slot]) translate([dx, 0]) circle(d = hd(m3_clear));   // motor slot
+}
+module fit_coupon_2d() difference() { coupon_outline(); coupon_holes_2d(); }
+module coupon_marks() for (p = [[-14 - cnc_bit, -20 - cnc_bit], [46 + cnc_bit, 20 + cnc_bit]]) translate(p) square(0.05, center = true);
+module fit_coupon_cnc_inner()   { offset(delta = -cnc_bit/2) coupon_holes_2d($hc = 0); coupon_marks(); }
+module fit_coupon_cnc_outline() { offset(r = cnc_bit/2) coupon_outline(); coupon_marks(); }
+
+module side_plate_cnc_inner()   { offset(delta = -cnc_bit/2) plate_holes_2d($hc = 0); cnc_marks(); }
+module side_plate_cnc_outline() { offset(r = cnc_bit/2) plate_outline(); cnc_marks(); }
 
 module side_plate() linear_extrude(plate_t) side_plate_2d();
 
@@ -573,6 +626,7 @@ module assembly() {
             }
         }
         pulley_y = -(plate_gap/2 + plate_t + 2 + pulley_len/2);
+        belt_y   = -(plate_gap/2 + plate_t + 2 + (pulley_hub_in ? pulley_hub_len + 1 : 1) + 3.5);   // centre of the teeth
         color("Silver") {
             for (z = nips) {
                 along_y(drv_x, z, plate_gap/2 + plate_t + 2)
@@ -582,7 +636,7 @@ module assembly() {
             for (p = [[drv_x, nips[0]], [drv_x, nips[1]], [motor_x, motor_z]])
                 along_y(p[0], p[1], pulley_y + pulley_len/2) cylinder(d = pulley_pd + 1.5, h = pulley_len);
         }
-        color("Black") translate([0, pulley_y, 0]) xz_extrude(6) belt_2d();
+        color("Black") translate([0, belt_y, 0]) xz_extrude(6) belt_2d();
         color("#333") translate([motor_x - 21, -plate_gap/2, motor_z - 21]) cube([42, 40, 42]);
     }
 
@@ -599,6 +653,11 @@ module assembly() {
 if      (part == "assembly")      assembly();
 else if (part == "side_plate")    side_plate();
 else if (part == "side_plate_2d") side_plate_2d();              // export DXF/SVG for the laser
+else if (part == "fit_coupon_2d")          fit_coupon_2d();            // laser fit test
+else if (part == "fit_coupon_cnc_inner")   fit_coupon_cnc_inner();     // CNC fit test, pass 1
+else if (part == "fit_coupon_cnc_outline") fit_coupon_cnc_outline();   // CNC fit test, pass 2
+else if (part == "side_plate_cnc_inner")   side_plate_cnc_inner();     // CNC pass 1: holes + slots
+else if (part == "side_plate_cnc_outline") side_plate_cnc_outline();   // CNC pass 2: outline, with tabs
 else if (part == "funnel")        translate([0, 0, plate_gap/2]) rotate([90, 0, 0]) funnel();
 else if (part == "driven_roller") driven_roller();
 else if (part == "idler_roller")  idler_roller();

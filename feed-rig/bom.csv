@@ -30,7 +30,7 @@ Fastener,M3 x 6 grub screw,driven rollers,4,,pulleys come with their own
 Fastener,M3 x 4 grub screw,idler arms (a longer one sticks out),4,,
 Fastener,M2 x 6 screw,camera board to standoffs,4,,
 Fastener,(kit),M3 + M2 + M5 assortment,1,15,covers all fasteners above
-Drive,NEMA17 stepper,e.g. 17HS4401 (1.5 A; 40 mm body; 5 mm shaft at least 24 mm long),1,12,a 20 mm shaft is too short for the pulley
+Drive,NEMA17 stepper,17HS15-1704S (1.7 A; 5 mm D-shaft 20 mm long) - owned,1,0,shaft 20 mm or longer; all 3 pulleys mounted hub toward the plate
 Drive,TMC2209 driver module,standalone STEP/DIR,1,6,
 Drive,Electrolytic capacitor,100 uF 25 V+,1,1,across the driver's VM/GND - protects the driver
 Drive,Arduino Nano/Uno or ESP32,,1,8,runs feed_test.ino

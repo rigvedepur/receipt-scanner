@@ -6,7 +6,7 @@
 //
 //  Stack along the shaft, from plate B (left) to the pulley (right):
 //    plate B + 608 bearing | hub washer | ROLLER (set screws) | hub washer |
-//    plate A + 608 bearing | shim washer | GT2 pulley (set screws)
+//    plate A + 608 bearing | shim washer | GT2 pulley, HUB TOWARD THE PLATE (set screws)
 //
 //  How it holds together:
 //   * The 608 bearings are pressed into the plates. The shaft spins in them.
@@ -14,6 +14,8 @@
 //   * The hub washers sit between the roller ends and the bearing INNER races.
 //     That traps the shaft axially: it can't slide left or right.
 //   * The pulley is locked to the shaft end (outside plate A) with 2 set screws.
+//     All three pulleys face hub-in (hub toward the plate): the 17HS15-1704S has
+//     a 20 mm D-shaft, and only this way does the motor pulley's hub sit fully on it.
 //     The shim washer keeps it from rubbing the bearing's outer race.
 //   * The motor bolts to the INSIDE face of plate A. Its shaft pokes through the
 //     plate, and its pulley sits in the same plane as the roller pulley.
@@ -83,7 +85,8 @@ module gt2_teeth_2d() difference() {
 }
 
 // local: x in [0, 16]; flange | teeth | flange | hub. Belt runs at x = 1..8.
-module gt2_pulley(bore = 8) {
+module gt2_pulley(bore = 8) translate([16, 0, 0]) mirror([1, 0, 0]) gt2_pulley_hub_out(bore);   // hub toward the plate
+module gt2_pulley_hub_out(bore = 8) {
     color("LightSteelBlue") {
         along_x(0)  difference() { cylinder(d = 16, h = 1); translate([0,0,-1]) cylinder(d = bore, h = 3); }
         along_x(1)  linear_extrude(7) difference() { gt2_teeth_2d(); circle(d = bore); }
@@ -113,7 +116,7 @@ module plate_piece(y0, z0, w, h, holes) {   // inner face at x = 0, extends +X b
 module nema17() {           // flange face at x = 0, body extends -X
     color("#2b2b2b") translate([-40, motor_off[0] - 21, motor_off[1] - 21]) cube([40, 42, 42]);
     color("Silver") translate([-0.01, motor_off[0], motor_off[1]]) rotate([0, 90, 0]) cylinder(d = 22, h = 2);
-    color("Silver") translate([0, motor_off[0], motor_off[1]]) rotate([0, 90, 0]) cylinder(d = 5, h = 24);
+    color("Silver") translate([0, motor_off[0], motor_off[1]]) rotate([0, 90, 0]) cylinder(d = 5, h = 20);   // 20 mm D-shaft
 }
 
 module label(txt, pos, size = 3.2) {
@@ -159,14 +162,14 @@ label("hub washer", [xa - 3 + washA_dx, 0, -14], 2.6);
 label("plate A", [xa + 3 + plateA_dx, 0, 33]);
 label("608 bearing (pressed into plate)", [xa + 4 + bearA_dx, 0, 14 + explode*6], 2.6);
 label("shim", [xa + plate_t + 1.5 + shim_dx, 0, 9 + explode*6], 2.6);
-label("GT2 20T pulley, 8 mm bore (2 set screws)", [pulley_x0 + 8 + pulley_dx, 0, 20 + explode*8], 2.6);
+label("GT2 20T pulley, 8 mm bore, hub toward plate", [pulley_x0 + 8 + pulley_dx, 0, 20 + explode*8], 2.6);
 
 // motor + its pulley + belt
 if (show_motor) {
     translate([xa + plateA_dx, 0, 0]) nema17();
     translate([pulley_x0 + pulley_dx, motor_off[0], motor_off[1]]) gt2_pulley(5);
     label("NEMA17, bolted to the INSIDE of plate A", [xa - 45 + plateA_dx, motor_off[0], motor_off[1] + 24], 2.8);
-    label("motor pulley, GT2 20T 5 mm bore", [pulley_x0 + 8 + pulley_dx, motor_off[0], motor_off[1] - 16], 2.6);
+    label("motor pulley, 5 mm bore, hub toward plate (20 mm shaft)", [pulley_x0 + 8 + pulley_dx, motor_off[0], motor_off[1] - 16], 2.6);
 }
-belt(pulley_x0 + 1.5 + pulley_dx);
+belt(pulley_x0 + 8.5 + pulley_dx);   // on the teeth, now the outer part of each pulley
 label("GT2 belt, 6 mm", [pulley_x0 + 4 + pulley_dx, motor_off[0]/2 - 8, motor_off[1]/2]);
