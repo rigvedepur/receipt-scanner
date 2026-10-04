@@ -9,7 +9,7 @@ Printed,Funnel,funnel.stl,1,,print on its end cap
 Printed,Width shim,width_shim.stl,2,,optional; for 57/58 mm receipts
 Printed,Camera mount,camera_mount.stl,1,,bar face down
 Laser-cut,Side plate,side_plate_laser.svg - 157 x 167 mm,2,,from 6 mm basswood/poplar plywood; set plate_t to the measured thickness
-Material,Plywood sheet,6 mm laser plywood 12x12 in,3,15,2 plates + 1 spare/test
+Material,Basswood sheet,1/8 in (3.2 mm) 12x12 in,4,0,owned; one plate layer per sheet; glue pairs into 2 plates (about 6.35 mm)
 Material,Filament,PLA or PETG,~250 g,6,
 Mechanical,Ball bearing,608ZZ (8x22x7),8,6,usually sold in packs of 10
 Mechanical,Smooth rod,8 mm steel; cut 2x129 mm + 2x123 mm,600 mm,10,or buy precut lengths
@@ -21,10 +21,11 @@ Mechanical,Extension spring,~20-40 mm long, light,4,5,a spring assortment; rubbe
 Mechanical,M5 threaded rod,cut to 4 x 120 mm,1 m,4,frame spacers
 Fastener,M5 nut,,8,,
 Fastener,M5 washer,,8,,
-Fastener,M3 x 16 socket head,arm pivots,4,,
+Fastener,M3 x 16 socket head,arm pivots 4 + spring anchors 4,8,,anchors go in from the INSIDE; nut on the outside; spring hooks on the protruding shank
 Fastener,M3 nylock nut,arm pivots,4,,
 Fastener,M3 washer,arm pivots (2 per pivot),8,,
-Fastener,M3 x 10 socket head,motor 4 + funnel 6 + camera mount 4 + spring anchors 4,18,,
+Fastener,M3 x 12 socket head,motor,4,,M3 x 10 is too short with 6.35 mm laminated plates
+Fastener,M3 x 10 socket head,funnel 6 + camera mount 4,10,,
 Fastener,M3 nut,spring anchors,4,,
 Fastener,M3 x 6 grub screw,driven rollers,4,,pulleys come with their own
 Fastener,M3 x 4 grub screw,idler arms (a longer one sticks out),4,,
