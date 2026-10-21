@@ -20,7 +20,7 @@
 // =====================================================================
 
 /* [Part to render] */
-part = "assembly"; // [assembly, side_plate, side_plate_2d, side_plate_cnc_inner, side_plate_cnc_outline, fit_coupon_2d, fit_coupon_cnc_inner, fit_coupon_cnc_outline, funnel, driven_roller, idler_roller, idler_arm, spacer, hub_washer, width_shim, camera_mount, pulley_shim]
+part = "assembly"; // [assembly, side_plate, side_plate_2d, side_plate_cnc_inner, side_plate_cnc_outline, fit_coupon_2d, fit_coupon_cnc_inner, fit_coupon_cnc_outline, funnel, driven_roller, idler_roller, idler_arm, spacer, hub_washer, width_shim, camera_mount, pulley_shim, cam_arm_2d, cam_plate_2d]
 show_plates   = true;  // turn off to see inside from the side
 show_paper    = true;
 show_hardware = true;  // shafts, bearings, motor, pulleys, belt (visual only)
@@ -87,23 +87,32 @@ motor_x     = -48;  // NEMA17 center. Defaults give a ~200 mm closed GT2 loop
 motor_z     = -67;
 motor_slot  = 3;    // +/- tensioning slot along X
 
-/* [Camera - Pi Camera Module 3 Wide] */
-cam_dist     = 55;    // paper plane -> lens front. The Wide lens focuses down to ~50 mm
+/* [Camera - OV5647 5MP (Pi Camera v1.3 type)] */
+// Camera Module 3 Wide instead: cam_dist 55, cam_hfov 102, cam_vfov 67, cam_depth 12.4
+cam_dist     = 85;    // paper plane -> lens front; ~85 mm covers an 80 mm receipt
 cam_z_offset = 0;     // + moves the camera up from the height midway between the nips
 cam_slot     = 6;     // +/- distance-adjustment slots in the plates
-cam_hfov     = 102;   // horizontal FOV, along the receipt width (Y)
-cam_vfov     = 67;    // vertical FOV, along the paper motion (Z)
+cam_hfov     = 53.5;  // horizontal FOV, along the receipt width (Y)
+cam_vfov     = 41.4;  // vertical FOV, along the paper motion (Z)
 cam_board_w  = 25;    // along Y
 cam_board_h  = 24;    // along Z, ribbon connector at the bottom edge
 cam_hole_dx  = 21;    // M2 hole spacing across the board
 cam_hole_dz  = 12.5;  // M2 hole spacing top to bottom
 cam_hole_top = 2;     // top hole row, measured from the board's top edge
-cam_lens_top = 9.5;   // lens center, measured from the board's top edge (check the official drawing)
-cam_depth    = 12.4;  // board back -> lens front
+cam_lens_top = 9.5;   // lens center, measured from the board's top edge (MEASURE YOURS)
+cam_depth    = 8;     // board back -> lens front (MEASURE YOURS)
 cam_standoff = 4;     // clears the parts on the back of the board
 cam_holder_t = 3;
 cam_bar_t    = 10;
 m2_tap       = 1.8;
+m2_clear     = 2.4;
+
+/* [Camera mount - laser cut, bolts into the slots already cut in the plates] */
+lm_sheet      = 3.2;   // 1/8 in basswood
+lm_arm_layers = 2;     // each arm = 2 glued layers
+lm_fit        = 0.15;  // extra width of the tab slots
+cam_spacer    = 4;     // M2 standoff length: camera plate -> back of the board
+led_slot      = [2.5, 8];   // zip-tie / LED-holder slots (width, height)
 
 /* [CNC export (one bit, Luban "On the Path")] */
 cnc_bit = 3.175;   // end mill diameter; every path is offset by its radius
@@ -178,8 +187,24 @@ cam_bx1  = cam_hx - cam_holder_t;            // bar front face
 cam_bx0  = cam_bx1 - cam_bar_t;              // bar back face
 cam_mz0  = cam_zbot + 6.5;                   // the ribbon connector stays clear below this
 cam_mz1  = cam_ztop + 3;
-cam_slot_x = (cam_bx0 + cam_bx1)/2;
-cam_slot_z = [(cam_mz0 + cam_mz1)/2 - 5, (cam_mz0 + cam_mz1)/2 + 5];
+// Camera slots in the side plates, FROZEN at the positions already cut (2026-10).
+// Changing the camera settings no longer moves them.
+cam_slot_x = -79.4;
+cam_slot_z = [-20.75, -10.75];
+
+// Laser-cut camera mount (arms bolt into the slots above, reach back past the
+// plates' rear edge, and carry a camera plate that the board screws to).
+lm_arm_t = lm_sheet*lm_arm_layers;
+lm_pf    = cam_xb - cam_spacer;           // camera plate, front face (x)
+lm_pb    = lm_pf - lm_sheet;              // camera plate, back face
+lm_arm_y = plate_gap/2 - lm_arm_t;        // arm inner face |y|
+lm_ax0   = lm_pb - 6;                     // arm rear end
+lm_ax1   = cam_slot_x + 8;                // arm front end (past the bolt hole)
+lm_az0   = cam_slot_z[0] - 19;            // arm bottom
+lm_az1   = cam_slot_z[1] + 9;             // arm top
+lm_tabs  = [[lm_az0 + 4, lm_az0 + 12], [lm_az1 - 12, lm_az1 - 4]];   // tab z ranges
+lm_pz0   = cam_zbot - 16;                 // camera plate bottom
+lm_pz1   = cam_ztop + 16;                 // camera plate top
 
 cam_cover_w = 2*cam_dist*tan(cam_hfov/2);    // field width at the paper
 cam_cover_h = 2*cam_dist*tan(cam_vfov/2);
@@ -194,7 +219,7 @@ strip_lo = vis_edge([drv_x, nips[1]],  1);
 strip_h  = strip_hi - strip_lo;
 function join(v, i = 0) = i >= len(v) ? "" : str(v[i], join(v, i + 1));
 function cam_dpi(px) = px/(cam_cover_w/25.4);
-cam_modes = [[1536, 864, 120], [2304, 1296, 56], [4608, 2592, 14]];  // IMX708 sensor modes
+cam_modes = [[2592, 1944, 15], [1296, 972, 42], [640, 480, 90]];   // OV5647 sensor modes
 feed_v = 60;   // mm/s, for the report only
 
 hc = plate_mode == "laser" ? -laser_kerf : print_hole_comp;
@@ -248,7 +273,7 @@ echo(str("\n\n======== FEED RIG REPORT ========",
   "  (two arms per nip)",
   "\n Steps/mm at 8 microsteps: ", 200*8/(2*PI*Rd),
   "\n Plate size ~", round(x_right + plate_margin - min(x_left, cam_slot_x - cam_slot) + plate_margin), " x ", z_top - z_bot, " mm",
-  "\n --- Camera (Module 3 Wide) ---",
+  "\n --- Camera (OV5647) ---",
   "\n Lens ", cam_dist, " mm from paper", cam_dist < 50 ? "  -> WARNING: closer than the ~50 mm minimum focus" : "",
   "\n Field at paper: ", cam_cover_w, " (width) x ", cam_cover_h, " mm",
   cam_cover_w < paper_max_w + 4 ? "  -> WARNING: does not cover the full receipt width" : "",
@@ -279,7 +304,8 @@ hub_end      = pulley_hub_in ? 2 + pulley_hub_len : 2 + pulley_len;   // from pl
 fc_pulley    = motor_shaft_len - plate_t - hub_end;
 teeth_over   = max(0, 2 + pulley_len - (motor_shaft_len - plate_t) - (pulley_hub_in ? 1 : 0));
 fc_cap_hole  = min([for (h = funnel_holes) funnel_top - h[1] - m3_tap/2]);
-fc_cam_motor = (cam_mz0) - (motor_z + 21);
+fc_cam_motor = lm_az0 - (motor_z + 21);
+fc_cam_lens  = [cam_dist - cam_slot, cam_dist + cam_slot];      // lens distance range the slots allow
 fc_play      = plate_gap - roller_len - 2*washer_t;   // total axial play per roller
 fc_idl_gap   = nip_pitch - 2*Ri;
 fc_anchor_head = min([for (i = [0:1]) for (s = anchor_offsets) for (th = [th_min, 0, th_max])
@@ -292,7 +318,8 @@ echo(str("\n======== FIT CHECK ========",
   "\n [", pass(fc_cap_hole, 1), "] funnel cap material above its screw holes: ", fc_cap_hole, " mm",
   "\n [", pass(fc_pulley, 0), "] motor pulley hub fully on the shaft: ", fc_pulley, " mm to spare (", motor_shaft_len, " mm shaft, hubs ", pulley_hub_in ? "toward" : "away from", " the plate)",
   teeth_over > 0 ? str("\n [", teeth_over <= 4 ? "ok  " : "FAIL", "] motor pulley teeth overhang the shaft end by ", teeth_over, " mm (fine up to ~4 mm)") : "",
-  "\n [", pass(fc_cam_motor, 2), "] camera mount above motor body: ", fc_cam_motor, " mm",
+  "\n [", pass(fc_cam_motor, 2), "] camera arms above motor body: ", fc_cam_motor, " mm",
+  "\n [", (fc_cam_lens[0] * 2*tan(cam_hfov/2) >= paper_max_w + 2) ? "ok  " : "warn", "] camera slots set the lens ", fc_cam_lens[0], "-", fc_cam_lens[1], " mm from the paper (nominal ", cam_dist, "); field ", round(fc_cam_lens[0]*2*tan(cam_hfov/2)), "-", round(fc_cam_lens[1]*2*tan(cam_hfov/2)), " mm wide",
   "\n [", fc_play >= 0.2 && fc_play <= 1.5 ? "ok  " : "FAIL", "] hub washers: axial play per roller ", fc_play, " mm (want 0.2-1.5)",
   "\n [", pass(fc_idl_gap, 3), "] gap between the two idler rollers: ", fc_idl_gap, " mm",
   "\n Plate holes as drawn (", plate_mode, "): bearing ", hd(bearing_od - bearing_press),
@@ -536,6 +563,36 @@ module camera_mount() {
     }
 }
 
+// Laser-cut arm, drawn in the X-Z plane. Cut 4, glue into 2 arms of 2 layers.
+module cam_arm_2d() difference() {
+    translate([lm_ax0, lm_az0]) square([lm_ax1 - lm_ax0, lm_az1 - lm_az0]);
+    for (z = cam_slot_z) translate([cam_slot_x, z]) circle(d = hd(m3_clear));       // bolts to the plate slots
+    for (t = lm_tabs) translate([lm_pb - lm_fit/2, t[0] - lm_fit/2])                 // camera-plate tab slots
+        square([lm_sheet + lm_fit, t[1] - t[0] + lm_fit]);
+}
+
+// Laser-cut camera plate, drawn in the Y-Z plane (as seen from the paper). Cut 1.
+module cam_plate_2d() difference() {
+    union() {
+        translate([-lm_arm_y, lm_pz0]) square([2*lm_arm_y, lm_pz1 - lm_pz0]);
+        for (sy = [-1, 1], t = lm_tabs)                                            // tabs into the arms
+            translate([sy > 0 ? lm_arm_y - 0.01 : -lm_arm_y - lm_arm_t + 0.01, t[0]])
+                square([lm_arm_t, t[1] - t[0]]);
+    }
+    for (h = cam_holes) translate(h) circle(d = hd(m2_clear));                      // camera board, M2
+    translate([-9, cam_zbot - 4.5]) square([18, 3.5]);                             // ribbon cable through
+    for (z = [cam_ztop + 9, cam_zbot - 9], y = [-32, -16, 16, 32])                 // LED / zip-tie slots
+        translate([y - led_slot[0]/2, z - led_slot[1]/2]) square(led_slot);
+}
+
+module camera_mount_laser() {   // assembly view
+    color("BurlyWood") for (s = [-1, 1])
+        translate([0, s*(lm_arm_y + lm_arm_t/2), 0]) xz_extrude(lm_arm_t) cam_arm_2d();
+    color("Tan") translate([lm_pb, 0, 0]) rotate([90, 0, 90]) linear_extrude(lm_sheet) cam_plate_2d();
+    color("Silver") for (h = cam_holes)
+        translate([lm_pf, h[0], h[1]]) rotate([0, 90, 0]) cylinder(d = 4, h = cam_spacer, $fn = 6);
+}
+
 module camera_board() {   // visual only
     color("ForestGreen") translate([cam_xb, -cam_board_w/2, cam_zbot]) cube([1, cam_board_w, cam_board_h]);
     color("#222") translate([cam_xb + 1, 0, cam_zc]) rotate([0, 90, 0]) cylinder(d = 9, h = cam_depth - 1);
@@ -640,7 +697,7 @@ module assembly() {
         color("#333") translate([motor_x - 21, -plate_gap/2, motor_z - 21]) cube([42, 40, 42]);
     }
 
-    if (show_camera) { color("MediumPurple") camera_mount(); camera_board(); }
+    if (show_camera) { camera_mount_laser(); camera_board(); }
     if (show_fov) camera_fov();
 
     if (show_paper) color("White", 0.85)
@@ -666,4 +723,6 @@ else if (part == "spacer")        spacer();
 else if (part == "hub_washer")    hub_washer();
 else if (part == "width_shim")    width_shim();
 else if (part == "pulley_shim")   pulley_shim();
+else if (part == "cam_arm_2d")    cam_arm_2d();      // laser: cut 4, glue in pairs
+else if (part == "cam_plate_2d")  cam_plate_2d();    // laser: cut 1
 else if (part == "camera_mount")  translate([0, 0, -cam_bx0]) rotate([0, -90, 0]) camera_mount();

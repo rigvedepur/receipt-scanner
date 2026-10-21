@@ -14,7 +14,8 @@ const int PIN_DIR  = 3;
 const int PIN_EN   = 4;   // TMC2209 EN is active LOW
 
 const float ROLLER_R_MM = 11.6; // "Effective roller radius: driven" in the SCAD report
-const int   MICROSTEPS  = 8;    // TMC2209 standalone with MS1 = MS2 = GND on most boards; check yours
+const int   MICROSTEPS  = 16;   // DRV8825: M2 high, M0 + M1 low (TMC2209 with MS1 = MS2 = GND: 8)
+// DRV8825: tie RESET and SLEEP high or the driver stays off
 const float STEPS_PER_MM = 200.0 * MICROSTEPS / (2.0 * PI * ROLLER_R_MM);
 
 const float START_SPEED = 10.0;  // mm/s

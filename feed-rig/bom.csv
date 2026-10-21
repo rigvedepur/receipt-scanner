@@ -32,7 +32,7 @@ Fastener,M3 x 4 grub screw,idler arms (a longer one sticks out),4,,
 Fastener,M2 x 6 screw,camera board to standoffs,4,,
 Fastener,(kit),M3 + M2 + M5 assortment,1,15,covers all fasteners above
 Drive,NEMA17 stepper,17HS15-1704S (1.7 A; 5 mm D-shaft 20 mm long) - owned,1,0,shaft 20 mm or longer; all 3 pulleys mounted hub toward the plate
-Drive,TMC2209 driver module,standalone STEP/DIR,1,6,
+Drive,DRV8825 driver module,STEP/DIR + heatsink,1,0,ordered; RESET+SLEEP high; 1/16 microstepping (M2 high); I = 2 x Vref
 Drive,Electrolytic capacitor,100 uF 25 V+,1,1,across the driver's VM/GND - protects the driver
 Drive,Arduino Nano/Uno or ESP32,,1,8,runs feed_test.ino
 Drive,12 V 2 A power supply + DC jack,,1,10,
